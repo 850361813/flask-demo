@@ -14,7 +14,7 @@ def test():
 
 @app.route("/download/<filename>", methods=['GET'])
 def download_file(filename):
-    directory = '/'
+    directory = '.'
     print(directory)
     return send_from_directory(directory, filename, as_attachment=True)
 
