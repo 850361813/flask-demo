@@ -21,6 +21,23 @@
 
 <script type="text/javascript">
 
+    var logDataMap;
+    var currentDateKey;
+
+    function getFormatDate(arg) {
+
+        if (arg == undefined || arg == '') {
+            return '';
+        }
+
+        var re = arg + '';
+        if (re.length < 2) {
+            re = '0' + re;
+        }
+
+        return re;
+    }
+
     $(function () {
         var now = new Date('2018-01-01');
         var year = now.getFullYear();    //年
@@ -28,6 +45,11 @@
         var day = now.getDate();
         document.getElementById("chooseDate").value = year + '-' + getFormatDate(month) + '-' + getFormatDate(day);
         refreshChart();
+
+        $.get('/download/log', function (rawData) {
+            logDataMap = eval("(" + rawData + ")");
+        });
+
     });
 
     var dom = document.getElementById("container");
@@ -64,11 +86,13 @@
 
         var month = dateVar.getMonth() + 1;
 
+        currentDateKey = getFormatDate(month) + '-' + getFormatDate(dateVar.getDate());
+
         $.get('/download/' + pickFileName(month, getFormatDate(dateVar.getDate())), function (rawData) {
 
-            var data = splitData(rawData);
-
-            myChart.setOption(option = {
+            var data = splitData(rawData, currentDateKey);
+            console.log(data);
+            option = {
                 backgroundColor: '#fff',
                 animation: false,
                 legend: {
@@ -88,10 +112,22 @@
                     textStyle: {
                         color: '#000'
                     },
-                    position: function (pos, params, el, elRect, size) {
-                        var obj = {top: 10};
-                        obj[['left', 'right'][+(pos[0] < size.viewSize[0] / 2)]] = 30;
-                        return obj;
+
+                    formatter: function (params) {
+                        console.log(params);
+                        var result = 'Tick: ' + params[0].name + '<br />';
+                        var value = params[0].value;
+                        console.log(value);
+
+                        if ((value.constructor) === Array) {
+                            for (var item in value) {
+                                result = result + value[item] + '<br />';
+                            }
+                        } else {
+                            result = result + '交易金额: ' + value;
+                        }
+
+                        return result;
                     }
                 },
                 axisPointer: {
@@ -207,45 +243,25 @@
                 ],
                 series: [
                     {
-                        name: '交易',
+                        name: '交易价格',
                         type: 'line',
                         data: data.values,
+
                         smooth: true,
                         lineStyle: {
                             normal: {opacity: 0.5}
                         },
 
                         markPoint: {
-                            symbol: 'diamond',
-                            symbolSize: 20,
-                            showDelay: 0,
+                            data: []
 
-                            itemStyle: {
-                                normal: {
-                                    label: {
-                                        show: true,
-                                        position: 'top',
-                                        formatter: function (data) {
-                                            if (data.values == 3872)
-                                                return 'S';
-                                            else
-                                                return 'B';
-                                        }
-                                    }
-                                }
-
-                            },
-                            {#data: [#}
-                            {#    {name: '最高', value: 1, xAxis: '2013/2/18', yAxis: 2446},//通过yAxis来控制markPoint的位置#}
-                            {#    {name: 'S', value: 1, xAxis: '2013/3/25', yAxis: 2344},#}
-                            {#    {name: 'B', value: 0, xAxis: '2013/5/2', yAxis: 2176}#}
-                            {#]#}
                         }
                     }
                 ]
-            }, true);
+            };
 
-
+            markData(option);
+            myChart.setOption(option);
         });
 
         if (option && typeof option === "object") {
@@ -254,38 +270,76 @@
 
     }
 
+    function markData(option) {
+
+        var currentLog = logDataMap[currentDateKey];
+
+        for (var key in currentLog) {
+            var attr = currentLog[key];
+            if (attr[2] == '卖开') {
+                addMarkPointData(option, attr[1], attr[3].split(':')[1], 'rgb(0,255,0)');
+            } else {
+                addMarkPointData(option, attr[1], attr[3].split(':')[1], 'rgb(255,0,0)');
+            }
+        }
+    }
+
+    function addMarkPointData(option, coordKey, coordValue, color) {
+        option.series[0].markPoint.data.push({
+            silent: false,
+            symbol: 'triangle',
+            symbolOffset: [0, -10],
+            symbolSize: 10,
+            name: 'XX标点',
+            coord: [coordKey, coordValue],
+            label: {
+                formatter: function (params) {
+                    var result = '';
+                    var value = params.value.split(',');
+                    value.forEach(function (value, index, array) {
+                        result = result + value + '\n';
+                    });
+                    return result;
+                },
+                color: color,
+                align: 'left',
+                show: false,
+                backgroundColor: 'rgba(245, 245, 245, 0.8)'
+            },
+            itemStyle: {    //图形样式
+                normal: {color: color}
+            }
+        });
+    }
+
     function pickFileName(month, day) {
         return 'rb1805(' + month + '.' + day + ').csv'
     }
 
-    function getFormatDate(arg) {
-
-        if (arg == undefined || arg == '') {
-            return '';
-        }
-
-        var re = arg + '';
-        if (re.length < 2) {
-            re = '0' + re;
-        }
-
-        return re;
-    }
-
-    function splitData(rawData) {
+    function splitData(rawData, date) {
         var allRows = rawData.split(/\n/);
         var categoryData = [];
         var values = [];
+        var dateData = [];
         for (var i = 0; i < allRows.length; i++) {
             var day = allRows[i].split(',')[3];
             var ms = allRows[i].split(',')[4];
             categoryData.push(day + '.' + ms / 100);
-            values.push(allRows[i].split(',')[5]);
+            dateData.push(date);
+            var targetValue = allRows[i].split(',')[5];
+
+            var target = logDataMap[date][day + '.' + ms / 100];
+            if (target != null) {
+                targetValue = target;
+            }
+
+            values.push(targetValue);
         }
 
         return {
             categoryData: categoryData,
-            values: values
+            values: values,
+            dateData: dateData
         };
     }
 

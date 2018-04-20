@@ -1,4 +1,5 @@
-# coding:utf-8
+# -*- coding:utf-8 -*-
+import json
 import os
 from flask import Flask, render_template, url_for, make_response, send_from_directory
 
@@ -22,13 +23,20 @@ def download_file(filename):
 
 @app.route("/download/log", methods=['GET'])
 def download_log_file():
-    log_data = []
     file = open(os.path.join(APP_STATIC_TXT, 'log1.txt'))
+    total_data = {}
     for line in file:
         if '买开' in line or '买平今' in line or '卖平今' in line or '卖开' in line or '撤单' in line:
-            log_data.append(line.split(' '))
+            line_data = line.split(' ')
+            date_key = line_data[0]
+            time_key = line_data[1]
+            if date_key in total_data.keys():
+                total_data[date_key][time_key] = line_data
+            else:
+                time_data = {time_key: line_data}
+                total_data[date_key] = time_data
     file.close()
-    return str(log_data)
+    return json.dumps(total_data, ensure_ascii=False)
 
 
 if __name__ == "__main__":
