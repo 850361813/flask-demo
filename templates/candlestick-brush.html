@@ -213,6 +213,33 @@
                         smooth: true,
                         lineStyle: {
                             normal: {opacity: 0.5}
+                        },
+
+                        markPoint: {
+                            symbol: 'diamond',
+                            symbolSize: 20,
+                            showDelay: 0,
+
+                            itemStyle: {
+                                normal: {
+                                    label: {
+                                        show: true,
+                                        position: 'top',
+                                        formatter: function (data) {
+                                            if (data.values == 3872)
+                                                return 'S';
+                                            else
+                                                return 'B';
+                                        }
+                                    }
+                                }
+
+                            },
+                            {#data: [#}
+                            {#    {name: '最高', value: 1, xAxis: '2013/2/18', yAxis: 2446},//通过yAxis来控制markPoint的位置#}
+                            {#    {name: 'S', value: 1, xAxis: '2013/3/25', yAxis: 2344},#}
+                            {#    {name: 'B', value: 0, xAxis: '2013/5/2', yAxis: 2176}#}
+                            {#]#}
                         }
                     }
                 ]
@@ -252,7 +279,7 @@
         for (var i = 0; i < allRows.length; i++) {
             var day = allRows[i].split(',')[3];
             var ms = allRows[i].split(',')[4];
-            categoryData.push(day + '.' + ms/100);
+            categoryData.push(day + '.' + ms / 100);
             values.push(allRows[i].split(',')[5]);
         }
 
