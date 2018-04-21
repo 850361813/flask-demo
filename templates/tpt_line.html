@@ -8,7 +8,7 @@
 <br>
 <h3>交易情况图表</h3>
 <span style="color: green; ">业务日期:</span>
-<input type="text" id="chooseDate" value="" onchange="refreshChart()">
+<input type="date" id="datePicker" value="2018-01-01" onchange="refreshChart()">
 <p>
     <button class="formerDay" onclick="minusDay()">上一日</button>
     <button class="latterDay" onclick="addDay()">下一日</button>
@@ -39,11 +39,6 @@
     }
 
     $(function () {
-        var now = new Date('2018-01-01');
-        var year = now.getFullYear();    //年
-        var month = now.getMonth() + 1;   //月
-        var day = now.getDate();
-        document.getElementById("chooseDate").value = year + '-' + getFormatDate(month) + '-' + getFormatDate(day);
         refreshChart();
 
         $.get('/download/log', function (rawData) {
@@ -59,30 +54,30 @@
     var downColor = '#ec0000';
 
     function addDay() {
-        var dateParam = document.getElementById("chooseDate").value;
+        var dateParam = document.getElementById("datePicker").value;
         var date = new Date(dateParam);
         date.setDate(date.getDate() + 1);
         var month = date.getMonth() + 1;
         var day = date.getDate();
         var newDate = date.getFullYear() + '-' + getFormatDate(month) + '-' + getFormatDate(day);
-        document.getElementById("chooseDate").value = newDate;
+        document.getElementById("datePicker").value = newDate;
         refreshChart();
     }
 
     function minusDay() {
-        var dateParam = document.getElementById("chooseDate").value;
+        var dateParam = document.getElementById("datePicker").value;
         var date = new Date(dateParam);
         date.setDate(date.getDate() - 1);
         var month = date.getMonth() + 1;
         var day = date.getDate();
         var newDate = date.getFullYear() + '-' + getFormatDate(month) + '-' + getFormatDate(day);
-        document.getElementById("chooseDate").value = newDate;
+        document.getElementById("datePicker").value = newDate;
         refreshChart();
     }
 
     function refreshChart() {
 
-        var dateVar = new Date(document.getElementById("chooseDate").value);
+        var dateVar = new Date(document.getElementById("datePicker").value);
 
         var month = dateVar.getMonth() + 1;
 
