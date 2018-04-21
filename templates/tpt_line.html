@@ -91,7 +91,6 @@
         $.get('/download/' + pickFileName(month, getFormatDate(dateVar.getDate())), function (rawData) {
 
             var data = splitData(rawData, currentDateKey);
-            console.log(data);
             option = {
                 backgroundColor: '#fff',
                 animation: false,
@@ -114,20 +113,23 @@
                     },
 
                     formatter: function (params) {
-                        console.log(params);
-                        var result = 'Tick: ' + params[0].name + '<br />';
+                        var result = '';
                         var value = params[0].value;
-                        console.log(value);
 
                         if ((value.constructor) === Array) {
                             for (var item in value) {
+                                if (item < 2) { // not need desc key
+                                    continue;
+                                }
                                 result = result + value[item] + '<br />';
                             }
                         } else {
                             result = result + '交易金额: ' + value;
                         }
 
-                        return result;
+                        var tickTime = 'Tick: ' + params[0].name + '<br />';
+
+                        return result + '<br />-----------<br />' + tickTime;
                     }
                 },
                 axisPointer: {
@@ -277,8 +279,12 @@
         for (var key in currentLog) {
             var attr = currentLog[key];
             if (attr[2] == '卖开') {
+                addMarkPointData(option, attr[1], attr[3].split(':')[1], 'rgb(0,0,255)');
+            } else if (attr[2] == '买平今' || attr[2] == '卖平今') {
                 addMarkPointData(option, attr[1], attr[3].split(':')[1], 'rgb(0,255,0)');
-            } else {
+            } else if (attr[2] == '挂单') {
+                addMarkPointData(option, attr[1], attr[3], 'rgb(255,255,0)');
+            } else { // 买开
                 addMarkPointData(option, attr[1], attr[3].split(':')[1], 'rgb(255,0,0)');
             }
         }
@@ -291,14 +297,21 @@
             symbolOffset: [0, -10],
             symbolSize: 10,
             name: 'XX标点',
+            value: coordValue,
             coord: [coordKey, coordValue],
             label: {
                 formatter: function (params) {
                     var result = '';
-                    var value = params.value.split(',');
+                    var value = params.value;
+                    if (params.value.indexOf(',') >= 0) {
+                        var value = params.value.split(',');
                     value.forEach(function (value, index, array) {
                         result = result + value + '\n';
                     });
+                    } else {
+                        result = value;
+                    }
+
                     return result;
                 },
                 color: color,
