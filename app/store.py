@@ -35,7 +35,9 @@ def exist(collection_type, key, value):
 
 def query(collection_type, key):
     if collection_type == COLLECTION_RECORDS:
-        return db.records.find({COLLECTION_KEY: key}, '{records:1, _id:0}')
+        data = db.records.find_one({COLLECTION_KEY: key})
+        return str(data['records'])
     elif collection_type == COLLECTION_LOGS:
-        return db.logs.find({COLLECTION_KEY: key}, '{records:1, _id:0}')
+        data = db.logs.find_one({COLLECTION_KEY: key})
+        return str(data['records'])
 

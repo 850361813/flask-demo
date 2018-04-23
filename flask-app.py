@@ -25,7 +25,7 @@ def download_file(filename):
         if not os.path.exists(os.path.join(APP_STATIC_TXT, filename)):
             return send_from_directory(directory, filename, as_attachment=True)
         file = open(os.path.join(APP_STATIC_TXT, filename))
-        data = [{store.COLLECTION_KEY: filename, "records": file.readlines()}]
+        data = [{store.COLLECTION_KEY: filename, "records": file.read()}]
         store.insert(data, 'records')
         return send_from_directory(directory, filename, as_attachment=True)
 
@@ -33,6 +33,9 @@ def download_file(filename):
 @app.route("/download/log", methods=['GET'])
 def download_log_file():
     filename = 'log1.txt'
+    if store.exist(store.COLLECTION_LOGS, store.COLLECTION_KEY, filename) is not None:
+        return store.query(store.COLLECTION_LOGS, filename)
+
     file = open(os.path.join(APP_STATIC_TXT, filename))
     total_data = {}
     for line in file:
@@ -47,6 +50,9 @@ def download_log_file():
                 total_data[date_key] = time_data
     file.close()
     data = json.dumps(total_data, ensure_ascii=False)
+
+    insert_data = [{store.COLLECTION_KEY: filename, "records": data}]
+    store.insert(insert_data, 'records')
     return data
 
 
